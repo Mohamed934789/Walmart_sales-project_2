@@ -1,0 +1,3 @@
+pandas==2.2.3
+sqlalchemy==2.1.6
+# SQL export additionally requires your SQL Server ODBC driver and pyodbc.

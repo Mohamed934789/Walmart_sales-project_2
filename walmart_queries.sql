@@ -1,10 +1,10 @@
---the methods and the transactions 
+--the methods and the transactions
 select payment_method , count(*) from walmart
 group by payment_method
 
 
 --Top Rated Category by Average Customer Rating
-WITH best_rated_category AS (
+;WITH best_rated_category AS (
     SELECT category AS category_name, AVG(rating) AS average_rating
     FROM walmart
     GROUP BY category
@@ -18,14 +18,14 @@ WHERE average_rating = (
 
 ---- ?? Get the day of the month with the highest number of transactions from Walmart table
 
-WITH DailyTransactions AS (
-    SELECT 
+;WITH DailyTransactions AS (
+    SELECT
         FORMAT(date, 'dd') AS DayOfMonth,
         COUNT(*) AS TransactionCount
     FROM walmart
     GROUP BY FORMAT(date, 'dd')
 )
-SELECT 
+SELECT
     DayOfMonth,
     TransactionCount
 FROM DailyTransactions
@@ -40,55 +40,39 @@ group by payment_method;
 
 
 -- ?? Rating statistics (Max, Min, Avg) grouped by city and category
-SELECT 
-    city, 
-    category, 
+SELECT
+    city,
+    category,
     MAX(rating) AS MaxRating,
     MIN(rating) AS MinRating,
     AVG(rating) AS AvgRating
-FROM walmart 
+FROM walmart
 GROUP BY city, category;
 
 
 -- ?? Ranking categories by total sales (highest to lowest)
 
-SELECT 
-    category, 
+SELECT
+    category,
     SUM(Total) AS TotalSales
 FROM walmart
 GROUP BY category
 ORDER BY SUM(Total) DESC;
 
 -- ?? Count of the most frequently used payment method per branch
-WITH a AS (
-    SELECT TOP 1 
-        payment_method
-    FROM walmart
-    GROUP BY payment_method
-    ORDER BY COUNT(*) DESC
+;WITH method_counts AS (
+    SELECT Branch, payment_method, COUNT(*) AS PaymentCount
+    FROM walmart GROUP BY Branch, payment_method
+), ranked AS (
+    SELECT *, DENSE_RANK() OVER (PARTITION BY Branch ORDER BY PaymentCount DESC) AS method_rank
+    FROM method_counts
 )
-
-SELECT 
-    w.Branch, 
-    COUNT(*) AS PaymentCount
-FROM walmart w
-JOIN a ON w.payment_method = a.payment_method
-GROUP BY w.Branch
-ORDER BY PaymentCount DESC;
-
-
-with a as(
-
-	select time ,count(*)
-	case 
-	when 
-)
-
+SELECT Branch, payment_method, PaymentCount FROM ranked WHERE method_rank = 1;
 
 -- ? Transaction count distribution by time of day (Morning / Afternoon / Evening)
 
-SELECT 
-  CASE 
+SELECT
+  CASE
     WHEN CAST(time AS TIME) BETWEEN '05:00:00' AND '11:59:59' THEN 'Morning'
     WHEN CAST(time AS TIME) BETWEEN '12:00:00' AND '17:59:59' THEN 'Afternoon'
     WHEN CAST(time AS TIME) BETWEEN '18:00:00' AND '23:59:59' THEN 'Evening'
@@ -96,8 +80,8 @@ SELECT
   END AS TimeOfDay,
   COUNT(*) AS TransactionsCount
 FROM walmart
-GROUP BY 
-  CASE 
+GROUP BY
+  CASE
     WHEN CAST(time AS TIME) BETWEEN '05:00:00' AND '11:59:59' THEN 'Morning'
     WHEN CAST(time AS TIME) BETWEEN '12:00:00' AND '17:59:59' THEN 'Afternoon'
     WHEN CAST(time AS TIME) BETWEEN '18:00:00' AND '23:59:59' THEN 'Evening'
@@ -109,15 +93,15 @@ ORDER BY TransactionsCount DESC;
 
 -- ?? The year with the highest revenue drop compared to the previous year
 
-WITH yearly_revenue AS (
-    SELECT 
+;WITH yearly_revenue AS (
+    SELECT
         FORMAT(date, 'yyyy') AS year,
         SUM(Total) AS revenue
     FROM walmart
     GROUP BY FORMAT(date, 'yyyy')
 ),
 diffs AS (
-    SELECT 
+    SELECT
         year,
         revenue,
         revenue - LAG(revenue) OVER (ORDER BY year) AS revenue_diff
